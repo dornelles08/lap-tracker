@@ -147,12 +147,12 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex flex-col p-2 lg:p-4 gap-2 lg:gap-4">
       <Header />
       <div className="flex flex-1 w-full gap-2 lg:gap-4">
-        <aside className="hidden lg:block w-[200px] rounded-lg bg-muted p-4">
+        <aside className="hidden md:block md:w-[150px] lg:w-[200px] rounded-lg bg-muted p-4">
           <AdBanner data-ad-slot="YYYYYYYYYY" />
         </aside>
 
         <main className="flex-1 flex flex-col items-center p-2 w-full">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 w-full max-w-2xl flex flex-col md:max-h-[calc(100vh-120px-200px)]">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 w-full max-w-2xl flex flex-col md:max-h-[calc(100vh-120px-150px)]">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Cronômetro</h1>
               <Button
@@ -169,13 +169,13 @@ export default function Home() {
               <div className="flex flex-col md:flex-row gap-4 overflow-hidden">
                 <div className="flex-shrink-0">
                   {/* Display do tempo */}
-                  <div className="text-center mb-8">
+                  <div className="text-center mb-4">
                     <Input
                       type="text"
                       placeholder="Título da sessão"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="mb-4 text-center"
+                      className="mb-2 text-center"
                     />
                     <div className="text-5xl font-mono font-bold text-gray-800 dark:text-white mb-2">
                       {formatTime(time)}
@@ -186,10 +186,10 @@ export default function Home() {
                   </div>
 
                   {/* Botões de controle */}
-                  <div className="flex flex-col gap-6 items-center mb-6">
+                  <div className="flex flex-col gap-6 items-center mb-4">
                     <Button
                       onClick={handleStartStop}
-                      className={`w-24 h-24 rounded-full text-lg font-bold shadow-lg transition-all duration-200 active:scale-95 ${
+                      className={`w-20 h-20 rounded-full text-lg font-bold shadow-lg transition-all duration-200 active:scale-95 ${
                         isRunning
                           ? "bg-red-500 hover:bg-red-600 text-white shadow-red-200"
                           : "bg-green-500 hover:bg-green-600 text-white shadow-green-200"
@@ -368,12 +368,12 @@ export default function Home() {
           )}
         </main>
 
-        <aside className="hidden lg:block w-[200px] rounded-lg bg-muted p-4">
+        <aside className="hidden md:block w-[200px] rounded-lg bg-muted p-4">
           <AdBanner data-ad-slot="ZZZZZZZZZZ" />
         </aside>
       </div>
 
-      <footer className="hidden lg:block rounded-lg bg-muted p-4 text-center min-h-[150px]">
+      <footer className="hidden md:block rounded-lg bg-muted p-4 text-center min-h-[120px]">
         <AdBanner data-ad-slot="WWWWWWWWWW" />
       </footer>
     </div>
