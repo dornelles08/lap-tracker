@@ -6,17 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Flag, History, Pause, Play, RotateCcw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export default function Home() {
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [laps, setLaps] = useState<any[]>([]);
   const [title, setTitle] = useState("");
-  const [history, setHistory] = useState<any[]>(() => {
-    const saved = localStorage.getItem("stopwatch-history");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -24,23 +21,18 @@ export default function Home() {
   const startTimeRef = useRef(0);
   const lastLapTimeRef = useRef(0);
 
-  // Detectar se é dispositivo móvel
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-
-  // Função para vibração em dispositivos móveis
-  function vibrate(pattern: VibratePattern = 50) {
-    if (isMobile && navigator.vibrate) {
-      navigator.vibrate(pattern);
+  useEffect(() => {
+    const saved = localStorage.getItem("stopwatch-history");
+    if (saved) {
+      setHistory(JSON.parse(saved));
     }
-  }
+  }, []);
 
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
         setTime(Date.now() - startTimeRef.current);
-      }, 10);
+      }, 51); // Performance: Increased interval
     } else {
       clearInterval(intervalRef.current);
     }
@@ -48,7 +40,7 @@ export default function Home() {
     return () => clearInterval(intervalRef.current);
   }, [isRunning]);
 
-  function formatTime(milliseconds: number) {
+  const formatTime = (milliseconds: number) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
@@ -59,14 +51,9 @@ export default function Home() {
       .padStart(2, "0")}`;
   }
 
-  function handleStartStop() {
-    vibrate(100); // Vibração mais longa para ação principal
-
+  const handleStartStop = useCallback(() => {
     if (isRunning) {
-      // Parar cronômetro
       setIsRunning(false);
-
-      // Se há voltas registradas, adicionar o tempo final
       if (laps.length > 0) {
         const finalLapTime = time - lastLapTimeRef.current;
         setLaps((prev) => [
@@ -79,16 +66,14 @@ export default function Home() {
         ]);
       }
     } else {
-      // Iniciar cronômetro
       setIsRunning(true);
       startTimeRef.current = Date.now() - time;
       lastLapTimeRef.current = time;
     }
-  }
+  }, [isRunning, time, laps.length]);
 
-  function handleLap() {
+  const handleLap = useCallback(() => {
     if (isRunning) {
-      vibrate(50); // Vibração curta para volta
       const currentTime = time;
       const lapTime = currentTime - lastLapTimeRef.current;
 
@@ -103,12 +88,9 @@ export default function Home() {
 
       lastLapTimeRef.current = currentTime;
     }
-  }
+  }, [isRunning, time]);
 
-  function handleReset() {
-    vibrate([50, 50, 50]); // Padrão de vibração para reset
-
-    // Salvar sessão no histórico se houver dados
+  const handleReset = useCallback(() => {
     if (time > 0 || laps.length > 0) {
       const session = {
         id: Date.now(),
@@ -119,7 +101,7 @@ export default function Home() {
         lapCount: laps.length,
       };
 
-      const newHistory = [session, ...history].slice(0, 50); // Manter apenas 50 sessões
+      const newHistory = [session, ...history].slice(0, 50);
       setHistory(newHistory);
       localStorage.setItem("stopwatch-history", JSON.stringify(newHistory));
     }
@@ -130,18 +112,17 @@ export default function Home() {
     setTitle("");
     lastLapTimeRef.current = 0;
     clearInterval(intervalRef.current);
-  }
+  }, [time, laps, title, history]);
 
-  function clearHistory() {
-    vibrate(100);
+  const clearHistory = useCallback(() => {
     setHistory([]);
     localStorage.removeItem("stopwatch-history");
-  }
+  }, []);
 
-  function handleHistoryClick(session: any) {
+  const handleHistoryClick = useCallback((session: any) => {
     setSelectedSession(session);
     setIsHistoryModalOpen(true);
-  }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex flex-col p-2 lg:p-4 gap-2 lg:gap-4">
@@ -271,7 +252,7 @@ export default function Home() {
                     </p>
                   ) : (
                     history.map((session) => (
-                      <div key={session.id} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                      <div key={session.id} className="bg-gray-50 dark:bg-gamma-700 rounded-xl p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <div className="font-bold">{session.title || "Sessão sem título"}</div>

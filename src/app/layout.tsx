@@ -15,9 +15,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LapTracker",
+  title: "Lap Tracker - Cronômetro Online com Contador de Voltas",
   description:
-    "LapTrack é um cronômetro inteligente para circuitos, que registra e organiza voltas de forma simples e precisa. Ideal para treinos esportivos, corridas e qualquer atividade com tempo de voltas.",
+    "Cronômetro online e contador de voltas preciso e fácil de usar. Grave suas sessões de treino, analise seu tempo de volta e acompanhe seu progresso. Ideal para corrida, natação e outras atividades.",
+  keywords: [
+    "cronômetro online",
+    "contador de voltas",
+    "lap tracker",
+    "marcador de tempo",
+    "cronômetro para corrida",
+    "stopwatch online",
+  ],
+  authors: [{ name: "dornelles", url: "https://dornelles.dev" }],
+  creator: "dornelles",
+  publisher: "dornelles",
 };
 
 export default function RootLayout({
