@@ -1,102 +1,380 @@
-import Image from "next/image";
+"use client";
+
+import { AdBanner } from "@/components/AdBanner";
+import { Header } from "@/components/header";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Flag, History, Pause, Play, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [time, setTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [laps, setLaps] = useState<any[]>([]);
+  const [title, setTitle] = useState("");
+  const [history, setHistory] = useState<any[]>(() => {
+    const saved = localStorage.getItem("stopwatch-history");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const intervalRef = useRef<any>(null);
+  const startTimeRef = useRef(0);
+  const lastLapTimeRef = useRef(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+  // Detectar se é dispositivo móvel
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+
+  // Função para vibração em dispositivos móveis
+  function vibrate(pattern: VibratePattern = 50) {
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate(pattern);
+    }
+  }
+
+  useEffect(() => {
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTime(Date.now() - startTimeRef.current);
+      }, 10);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+
+    return () => clearInterval(intervalRef.current);
+  }, [isRunning]);
+
+  function formatTime(milliseconds: number) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const ms = Math.floor((milliseconds % 1000) / 10);
+
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${ms
+      .toString()
+      .padStart(2, "0")}`;
+  }
+
+  function handleStartStop() {
+    vibrate(100); // Vibração mais longa para ação principal
+
+    if (isRunning) {
+      // Parar cronômetro
+      setIsRunning(false);
+
+      // Se há voltas registradas, adicionar o tempo final
+      if (laps.length > 0) {
+        const finalLapTime = time - lastLapTimeRef.current;
+        setLaps((prev) => [
+          ...prev,
+          {
+            number: prev.length + 1,
+            lapTime: finalLapTime,
+            totalTime: time,
+          },
+        ]);
+      }
+    } else {
+      // Iniciar cronômetro
+      setIsRunning(true);
+      startTimeRef.current = Date.now() - time;
+      lastLapTimeRef.current = time;
+    }
+  }
+
+  function handleLap() {
+    if (isRunning) {
+      vibrate(50); // Vibração curta para volta
+      const currentTime = time;
+      const lapTime = currentTime - lastLapTimeRef.current;
+
+      setLaps((prev) => [
+        ...prev,
+        {
+          number: prev.length + 1,
+          lapTime: lapTime,
+          totalTime: currentTime,
+        },
+      ]);
+
+      lastLapTimeRef.current = currentTime;
+    }
+  }
+
+  function handleReset() {
+    vibrate([50, 50, 50]); // Padrão de vibração para reset
+
+    // Salvar sessão no histórico se houver dados
+    if (time > 0 || laps.length > 0) {
+      const session = {
+        id: Date.now(),
+        title: title,
+        date: new Date().toLocaleString("pt-BR"),
+        totalTime: time,
+        laps: laps,
+        lapCount: laps.length,
+      };
+
+      const newHistory = [session, ...history].slice(0, 50); // Manter apenas 50 sessões
+      setHistory(newHistory);
+      localStorage.setItem("stopwatch-history", JSON.stringify(newHistory));
+    }
+
+    setIsRunning(false);
+    setTime(0);
+    setLaps([]);
+    setTitle("");
+    lastLapTimeRef.current = 0;
+    clearInterval(intervalRef.current);
+  }
+
+  function clearHistory() {
+    vibrate(100);
+    setHistory([]);
+    localStorage.removeItem("stopwatch-history");
+  }
+
+  function handleHistoryClick(session: any) {
+    setSelectedSession(session);
+    setIsHistoryModalOpen(true);
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex flex-col p-2 lg:p-4 gap-2 lg:gap-4">
+      <Header />
+      <div className="flex flex-1 w-full gap-2 lg:gap-4">
+        <aside className="hidden lg:block w-[200px] rounded-lg bg-muted p-4">
+          <AdBanner data-ad-slot="YYYYYYYYYY" />
+        </aside>
+
+        <main className="flex-1 flex flex-col items-center p-2 w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 w-full max-w-2xl flex flex-col md:max-h-[calc(100vh-120px-200px)]">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Cronômetro</h1>
+              <Button
+                onClick={() => setShowHistory(!showHistory)}
+                variant="ghost"
+                size="sm"
+                className="p-2"
+              >
+                <History className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {!showHistory ? (
+              <div className="flex flex-col md:flex-row gap-4 overflow-hidden">
+                <div className="flex-shrink-0">
+                  {/* Display do tempo */}
+                  <div className="text-center mb-8">
+                    <Input
+                      type="text"
+                      placeholder="Título da sessão"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="mb-4 text-center"
+                    />
+                    <div className="text-5xl font-mono font-bold text-gray-800 dark:text-white mb-2">
+                      {formatTime(time)}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {laps.length > 0 ? `Volta ${laps.length + 1}` : "Volta 1"}
+                    </div>
+                  </div>
+
+                  {/* Botões de controle */}
+                  <div className="flex flex-col gap-6 items-center mb-6">
+                    <Button
+                      onClick={handleStartStop}
+                      className={`w-24 h-24 rounded-full text-lg font-bold shadow-lg transition-all duration-200 active:scale-95 ${
+                        isRunning
+                          ? "bg-red-500 hover:bg-red-600 text-white shadow-red-200"
+                          : "bg-green-500 hover:bg-green-600 text-white shadow-green-200"
+                      }`}
+                    >
+                      {isRunning ? (
+                        <Pause className="h-8 w-8" />
+                      ) : (
+                        <Play className="h-8 w-8 ml-1" />
+                      )}
+                    </Button>
+                    <div className="flex gap-6">
+                      <Button
+                        onClick={handleLap}
+                        disabled={!isRunning}
+                        className="w-16 h-16 rounded-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white shadow-lg transition-all duration-200 active:scale-95"
+                      >
+                        <Flag className="h-6 w-6" />
+                      </Button>
+                      <Button
+                        onClick={handleReset}
+                        className="w-16 h-16 rounded-full bg-gray-500 hover:bg-gray-600 text-white shadow-lg transition-all duration-200 active:scale-95"
+                      >
+                        <RotateCcw className="h-6 w-6" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de voltas */}
+                <div className="flex-grow bg-gray-50 dark:bg-gray-700 rounded-2xl p-4 overflow-y-auto">
+                  <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">
+                    Voltas
+                  </h3>
+                  {laps.length > 0 ? (
+                    <div className="space-y-2">
+                      {laps.map((lap, index) => (
+                        <div
+                          key={index}
+                          className="flex justify-between items-center py-2 px-3 bg-white dark:bg-gray-600 rounded-xl"
+                        >
+                          <span className="font-medium text-gray-700 dark:text-gray-200">
+                            #{lap.number}
+                          </span>
+                          <div className="text-right">
+                            <div className="font-mono text-sm text-gray-800 dark:text-white">
+                              {formatTime(lap.lapTime)}
+                            </div>
+                            <div className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                              Total: {formatTime(lap.totalTime)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500 dark:text-gray-400">
+                      Nenhuma volta registrada
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Tela de Histórico */
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">Histórico</h2>
+                  {history.length > 0 && (
+                    <Button onClick={clearHistory} variant="destructive" size="sm">
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {history.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                      Nenhuma sessão salva ainda
+                    </p>
+                  ) : (
+                    history.map((session) => (
+                      <div key={session.id} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="font-bold">{session.title || "Sessão sem título"}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {session.date}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-mono text-lg font-bold text-gray-800 dark:text-white">
+                              {formatTime(session.totalTime)}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {session.lapCount} voltas
+                            </div>
+                          </div>
+                        </div>
+
+                        {session.laps.length > 0 && (
+                          <div className="space-y-1">
+                            {session.laps.slice(0, 3).map((lap: any, index: number) => (
+                              <div
+                                key={index}
+                                className="flex justify-between text-xs text-gray-600 dark:text-gray-300"
+                              >
+                                <span>Volta {lap.number}</span>
+                                <span className="font-mono">{formatTime(lap.lapTime)}</span>
+                              </div>
+                            ))}
+                            {session.laps.length > 3 && (
+                              <div className="text-xs text-gray-500 dark:text-ray-400 text-center">
+                                +{session.laps.length - 3} voltas
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => handleHistoryClick(session)}
+                          size="sm"
+                          className="mt-2"
+                        >
+                          Ver detalhes
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {selectedSession && (
+            <Dialog open={isHistoryModalOpen} onOpenChange={setIsHistoryModalOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{selectedSession.title || "Sessão sem título"}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {selectedSession.date}
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-lg font-bold text-gray-800 dark:text-white">
+                        {formatTime(selectedSession.totalTime)}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {selectedSession.lapCount} voltas
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {selectedSession.laps.map((lap: any, index: number) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center py-2 px-3 bg-gray-100 dark:bg-gray-600 rounded-xl"
+                      >
+                        <span className="font-medium text-gray-700 dark:text-gray-200">
+                          #{lap.number}
+                        </span>
+                        <div className="text-right">
+                          <div className="font-mono text-sm text-gray-800 dark:text-white">
+                            {formatTime(lap.lapTime)}
+                          </div>
+                          <div className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                            Total: {formatTime(lap.totalTime)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </main>
+
+        <aside className="hidden lg:block w-[200px] rounded-lg bg-muted p-4">
+          <AdBanner data-ad-slot="ZZZZZZZZZZ" />
+        </aside>
+      </div>
+
+      <footer className="hidden lg:block rounded-lg bg-muted p-4 text-center min-h-[150px]">
+        <AdBanner data-ad-slot="WWWWWWWWWW" />
       </footer>
     </div>
   );
