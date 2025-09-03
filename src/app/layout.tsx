@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kronos",
-  description: "Kronos: Uma aplicação moderna para gerenciamento de tempo e otimização de tarefas.",
+  title: "LapTracker",
+  description: "Lap Tracker: Uma aplicação moderna para gerenciamento de tempo e otimização de tarefas.",
 };
 
 export default function RootLayout({
