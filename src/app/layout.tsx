@@ -16,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "LapTracker",
-  description: "Lap Tracker: Uma aplicação moderna para gerenciamento de tempo e otimização de tarefas.",
+  description:
+    "LapTrack é um cronômetro inteligente para circuitos, que registra e organiza voltas de forma simples e precisa. Ideal para treinos esportivos, corridas e qualquer atividade com tempo de voltas.",
 };
 
 export default function RootLayout({
@@ -27,12 +28,7 @@ export default function RootLayout({
   return (
     <html lang="pt-br" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
       </body>
