@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Flag, History, Pause, Play, RotateCcw } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const [time, setTime] = useState(0);
@@ -49,7 +49,7 @@ export default function Home() {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${ms
       .toString()
       .padStart(2, "0")}`;
-  }
+  };
 
   const handleStartStop = useCallback(() => {
     if (isRunning) {
@@ -129,11 +129,11 @@ export default function Home() {
       <Header />
       <div className="flex flex-1 w-full gap-2 lg:gap-4">
         <aside className="hidden md:block md:w-[150px] lg:w-[200px] rounded-lg bg-muted p-4">
-          <AdBanner data-ad-slot="YYYYYYYYYY" />
+          <AdBanner data-ad-slot="8753873120" />
         </aside>
 
         <main className="flex-1 flex flex-col items-center p-2 w-full">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 w-full max-w-2xl flex flex-col md:max-h-[calc(100vh-120px-150px)]">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 w-full max-w-2xl flex flex-col md:max-h-[calc(100vh-120px-190px)]">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Cronômetro</h1>
               <Button
@@ -255,13 +255,15 @@ export default function Home() {
                       <div key={session.id} className="bg-gray-50 dark:bg-gamma-700 rounded-xl p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <div className="font-bold">{session.title || "Sessão sem título"}</div>
+                            <div className="font-bold dark:text-gray-800">
+                              {session.title || "Sessão sem título"}
+                            </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
                               {session.date}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-mono text-lg font-bold text-gray-800 dark:text-white">
+                            <div className="font-mono text-lg font-bold text-gray-800">
                               {formatTime(session.totalTime)}
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -350,12 +352,12 @@ export default function Home() {
         </main>
 
         <aside className="hidden md:block w-[200px] rounded-lg bg-muted p-4">
-          <AdBanner data-ad-slot="ZZZZZZZZZZ" />
+          <AdBanner data-ad-slot="8753873120" />
         </aside>
       </div>
 
       <footer className="hidden md:block rounded-lg bg-muted p-4 text-center min-h-[120px]">
-        <AdBanner data-ad-slot="WWWWWWWWWW" />
+        <AdBanner data-ad-slot="3313295449" />
       </footer>
     </div>
   );
