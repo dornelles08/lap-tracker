@@ -1,17 +1,20 @@
 "use client";
 
-import { Flag, History, Pause, Play, RotateCcw } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { AdBanner } from "@/components/AdBanner";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { auth, db } from "@/lib/firebase";
+import {
+  getFromLocalStorage,
+  removeFromLocalStorage,
+  saveToLocalStorage,
+} from "@/lib/localStorage";
+import { User } from "firebase/auth";
+import { addDoc, collection, getDocs, query } from "firebase/firestore";
+import { Flag, History, Pause, Play, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Lap {
   number: number;
@@ -40,13 +43,58 @@ export default function Home() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef(0);
   const lastLapTimeRef = useRef(0);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("stopwatch-history");
-    if (saved) {
-      setHistory(JSON.parse(saved));
-    }
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const loadSessions = async () => {
+      if (user) {
+        // User is logged in, load from Firebase
+        try {
+          const q = query(collection(db, `users/${user.uid}/sessions`));
+          const querySnapshot = await getDocs(q);
+          const firebaseSessions: Session[] = [];
+          querySnapshot.forEach((doc) => {
+            firebaseSessions.push(doc.data() as Session);
+          });
+          setHistory(firebaseSessions);
+
+          // Migrate local storage data to Firebase if any
+          const localSessions = getFromLocalStorage<Session[]>("stopwatch-history");
+          if (localSessions && localSessions.length > 0) {
+            for (const session of localSessions) {
+              await addDoc(collection(db, `users/${user.uid}/sessions`), session);
+            }
+            removeFromLocalStorage("stopwatch-history");
+            console.log("Migrated local storage sessions to Firebase.");
+            // Reload history after migration
+            const updatedQuerySnapshot = await getDocs(q);
+            const updatedFirebaseSessions: Session[] = [];
+            updatedQuerySnapshot.forEach((doc) => {
+              updatedFirebaseSessions.push(doc.data() as Session);
+            });
+            setHistory(updatedFirebaseSessions);
+          }
+        } catch (e) {
+          console.error("Error loading sessions from Firebase: ", e);
+        }
+      } else {
+        // User is anonymous, load from Local Storage
+        const saved = getFromLocalStorage<Session[]>("stopwatch-history");
+        if (saved) {
+          setHistory(saved);
+        }
+      }
+    };
+
+    loadSessions();
+  }, [user]);
 
   useEffect(() => {
     if (isRunning) {
@@ -116,7 +164,7 @@ export default function Home() {
     }
   }, [isRunning, time]);
 
-  const handleReset = useCallback(() => {
+  const handleReset = useCallback(async () => {
     if (time > 0 || laps.length > 0) {
       const session: Session = {
         id: Date.now(),
@@ -129,7 +177,19 @@ export default function Home() {
 
       const newHistory = [session, ...history].slice(0, 50);
       setHistory(newHistory);
-      localStorage.setItem("stopwatch-history", JSON.stringify(newHistory));
+
+      if (user) {
+        // Save to Firebase
+        try {
+          await addDoc(collection(db, `users/${user.uid}/sessions`), session);
+          console.log("Session saved to Firebase!");
+        } catch (e) {
+          console.error("Error adding document: ", e);
+        }
+      } else {
+        // Save to Local Storage
+        saveToLocalStorage("stopwatch-history", newHistory);
+      }
     }
 
     setIsRunning(false);
@@ -140,11 +200,11 @@ export default function Home() {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-  }, [time, laps, title, history]);
+  }, [time, laps, title, history, user]);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
-    localStorage.removeItem("stopwatch-history");
+    removeFromLocalStorage("stopwatch-history");
   }, []);
 
   const handleHistoryClick = useCallback((session: Session) => {
@@ -163,9 +223,7 @@ export default function Home() {
         <main className="flex-1 flex flex-col items-center p-2 w-full">
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 w-full max-w-2xl flex flex-col md:max-h-[calc(100vh-120px-190px)]">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                Cronômetro
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Cronômetro</h1>
               <Button
                 onClick={() => setShowHistory(!showHistory)}
                 variant="ghost"
@@ -267,15 +325,9 @@ export default function Home() {
               /* Tela de Histórico */
               <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                    Histórico
-                  </h2>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">Histórico</h2>
                   {history.length > 0 && (
-                    <Button
-                      onClick={clearHistory}
-                      variant="destructive"
-                      size="sm"
-                    >
+                    <Button onClick={clearHistory} variant="destructive" size="sm">
                       Limpar
                     </Button>
                   )}
@@ -288,10 +340,7 @@ export default function Home() {
                     </p>
                   ) : (
                     history.map((session) => (
-                      <div
-                        key={session.id}
-                        className="bg-gray-50 dark:bg-gamma-700 rounded-xl p-4"
-                      >
+                      <div key={session.id} className="bg-gray-50 dark:bg-gamma-700 rounded-xl p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <div className="font-bold dark:text-gray-800">
@@ -319,9 +368,7 @@ export default function Home() {
                                 className="flex justify-between text-xs text-gray-600 dark:text-gray-300"
                               >
                                 <span>Volta {lap.number}</span>
-                                <span className="font-mono">
-                                  {formatTime(lap.lapTime)}
-                                </span>
+                                <span className="font-mono">{formatTime(lap.lapTime)}</span>
                               </div>
                             ))}
                             {session.laps.length > 3 && (
@@ -347,15 +394,10 @@ export default function Home() {
           </div>
 
           {selectedSession && (
-            <Dialog
-              open={isHistoryModalOpen}
-              onOpenChange={setIsHistoryModalOpen}
-            >
+            <Dialog open={isHistoryModalOpen} onOpenChange={setIsHistoryModalOpen}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>
-                    {selectedSession.title || "Sessão sem título"}
-                  </DialogTitle>
+                  <DialogTitle>{selectedSession.title || "Sessão sem título"}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="flex justify-between">

@@ -11,7 +11,6 @@ type AdBannerProps = {
 export const AdBanner = (props: AdBannerProps) => {
   useEffect(() => {
     try {
-      // @ts-expect-error
       window.adsbygoogle = window.adsbygoogle || [];
       window.adsbygoogle.push({});
     } catch (err) {
