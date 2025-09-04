@@ -1,9 +1,11 @@
 "use client";
 
 import { createUserWithEmail } from "@/lib/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
-import type React from "react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -12,39 +14,39 @@ interface SignUpFormProps {
   onLoginClick: () => void;
 }
 
-export function SignUpForm({ onLoginClick }: SignUpFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+const SignUpSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.email("Email inválido"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+});
 
-  const handleEmailSignUp = async () => {
-    const result = await createUserWithEmail(email, password);
+type SignUpFormValues = z.infer<typeof SignUpSchema>;
+
+export function SignUpForm({ onLoginClick }: SignUpFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [firebaseError, setFirebaseError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormValues>({
+    resolver: zodResolver(SignUpSchema),
+  });
+
+  const onSubmit = async (data: SignUpFormValues) => {
+    setFirebaseError(null);
+    const result = await createUserWithEmail(data.email, data.password);
     if (result.error) {
-      setError(result.error);
-    } else {
-      setError(null);
+      setFirebaseError(result.error);
     }
   };
 
-  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    setEmail(e.target.value);
-  };
-
-  const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    setPassword(e.target.value);
-  };
-
-  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    setName(e.target.value);
-  };
-
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-col gap-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="mx-auto flex w-full max-w-sm flex-col gap-y-4"
+    >
       <div className="space-y-2">
         <Label htmlFor="name">Nome</Label>
         <div className="relative">
@@ -54,10 +56,10 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
             type="text"
             placeholder="seu nome"
             className="pl-10"
-            value={name}
-            onChange={onNameChange}
+            {...register("name")}
           />
         </div>
+        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
@@ -68,10 +70,10 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
             type="email"
             placeholder="seu@email.com"
             className="pl-10"
-            value={email}
-            onChange={onEmailChange}
+            {...register("email")}
           />
         </div>
+        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Senha</Label>
@@ -82,8 +84,7 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
             type={showPassword ? "text" : "password"}
             placeholder="sua senha"
             className="pl-10 pr-10"
-            value={password}
-            onChange={onPasswordChange}
+            {...register("password")}
           />
           <button
             type="button"
@@ -93,15 +94,18 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
             {showPassword ? <EyeOff /> : <Eye />}
           </button>
         </div>
+        {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button onClick={handleEmailSignUp}>Cadastrar</Button>
+      {firebaseError && <p className="text-sm text-destructive">{firebaseError}</p>}
+      <Button type="submit" disabled={isSubmitting}>
+        Cadastrar
+      </Button>
       <div className="text-center text-sm">
         Já tem uma conta?{" "}
         <Button variant="link" onClick={onLoginClick}>
           Faça login
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

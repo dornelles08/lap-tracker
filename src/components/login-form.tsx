@@ -1,8 +1,11 @@
 "use client";
 
 import { signInWithEmail } from "@/lib/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -11,33 +14,38 @@ interface LoginFormProps {
   onSignUpClick: () => void;
 }
 
-export function LoginForm({ onSignUpClick }: LoginFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+const LoginSchema = z.object({
+  email: z.email("Email inválido"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+});
 
-  const handleEmailLogin = async () => {
-    const result = await signInWithEmail(email, password);
+type LoginFormValues = z.infer<typeof LoginSchema>;
+
+export function LoginForm({ onSignUpClick }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [firebaseError, setFirebaseError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(LoginSchema),
+  });
+
+  const onSubmit = async (data: LoginFormValues) => {
+    setFirebaseError(null);
+    const result = await signInWithEmail(data.email, data.password);
     if (result.error) {
-      setError(result.error);
-    } else {
-      setError(null);
+      setFirebaseError(result.error);
     }
   };
 
-  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    setEmail(e.target.value);
-  };
-
-  const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    setPassword(e.target.value);
-  };
-
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-col gap-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="mx-auto flex w-full max-w-sm flex-col gap-y-4"
+    >
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <div className="relative">
@@ -47,10 +55,10 @@ export function LoginForm({ onSignUpClick }: LoginFormProps) {
             type="email"
             placeholder="seu@email.com"
             className="pl-10"
-            value={email}
-            onChange={onEmailChange}
+            {...register("email")}
           />
         </div>
+        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Senha</Label>
@@ -61,8 +69,7 @@ export function LoginForm({ onSignUpClick }: LoginFormProps) {
             type={showPassword ? "text" : "password"}
             placeholder="sua senha"
             className="pl-10 pr-10"
-            value={password}
-            onChange={onPasswordChange}
+            {...register("password")}
           />
           <button
             type="button"
@@ -72,15 +79,18 @@ export function LoginForm({ onSignUpClick }: LoginFormProps) {
             {showPassword ? <EyeOff /> : <Eye />}
           </button>
         </div>
+        {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button onClick={handleEmailLogin}>Entrar</Button>
+      {firebaseError && <p className="text-sm text-destructive">{firebaseError}</p>}
+      <Button type="submit" disabled={isSubmitting}>
+        Entrar
+      </Button>
       <div className="text-center text-sm">
         Não tem uma conta?{" "}
         <Button variant="link" onClick={onSignUpClick}>
           Cadastre-se
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

@@ -56,7 +56,11 @@ export function LoginDialog() {
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <Button className="mx-auto flex w-full max-w-sm" variant="outline" onClick={handleGoogleSignIn}>
+        <Button
+          className="mx-auto flex w-full max-w-sm"
+          variant="outline"
+          onClick={handleGoogleSignIn}
+        >
           <GoogleIcon className="mr-2 h-4 w-4" />
           Login with Google
         </Button>
