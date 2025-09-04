@@ -356,7 +356,7 @@ export default function Home() {
         </aside>
       </div>
 
-      <footer className="hidden md:block rounded-lg bg-muted p-4 text-center min-h-[120px]">
+      <footer className="block rounded-lg bg-muted p-4 text-center min-h-[120px]">
         <AdBanner data-ad-slot="3313295449" />
       </footer>
     </div>
