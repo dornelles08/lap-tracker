@@ -1,4 +1,10 @@
-import { AuthError, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import {
+  type AuthError,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
 import { auth } from "./firebase";
 
 function getFirebaseErrorMessage(error: AuthError): string {
@@ -20,31 +26,49 @@ function getFirebaseErrorMessage(error: AuthError): string {
   }
 }
 
-export async function signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
+export async function signInWithGoogle(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   const provider = new GoogleAuthProvider();
   try {
     await signInWithPopup(auth, provider);
     return { success: true };
   } catch (error) {
-    return { success: false, error: getFirebaseErrorMessage(error as AuthError) };
+    return {
+      success: false,
+      error: getFirebaseErrorMessage(error as AuthError),
+    };
   }
 }
 
-export async function signInWithEmail(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+export async function signInWithEmail(
+  email: string,
+  password: string,
+): Promise<{ success: boolean; error?: string }> {
   try {
     await signInWithEmailAndPassword(auth, email, password);
     return { success: true };
   } catch (error) {
-    return { success: false, error: getFirebaseErrorMessage(error as AuthError) };
+    return {
+      success: false,
+      error: getFirebaseErrorMessage(error as AuthError),
+    };
   }
 }
 
-export async function createUserWithEmail(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+export async function createUserWithEmail(
+  email: string,
+  password: string,
+): Promise<{ success: boolean; error?: string }> {
   try {
     await createUserWithEmailAndPassword(auth, email, password);
     return { success: true };
   } catch (error) {
-    return { success: false, error: getFirebaseErrorMessage(error as AuthError) };
+    return {
+      success: false,
+      error: getFirebaseErrorMessage(error as AuthError),
+    };
   }
 }
 
@@ -53,6 +77,9 @@ export async function signOut(): Promise<{ success: boolean; error?: string }> {
     await auth.signOut();
     return { success: true };
   } catch (error) {
-    return { success: false, error: getFirebaseErrorMessage(error as AuthError) };
+    return {
+      success: false,
+      error: getFirebaseErrorMessage(error as AuthError),
+    };
   }
 }
