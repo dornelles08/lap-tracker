@@ -36,7 +36,7 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
 
   const onSubmit = async (data: SignUpFormValues) => {
     setFirebaseError(null);
-    const result = await createUserWithEmail(data.email, data.password);
+    const result = await createUserWithEmail(data.email, data.password, data.name);
     if (result.error) {
       setFirebaseError(result.error);
     }
